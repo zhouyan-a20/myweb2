@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>肾小球滤过率eGFR计算器 - CKD-EPI公式</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            min-height: 100vh;
+            padding: 20px 15px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1976d2;
+            font-size: 24px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
+            font-size: 15px;
+        }
+
+        .gender-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .gender-option {
+            flex: 1;
+            position: relative;
+        }
+
+        .gender-option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .gender-option label {
+            display: block;
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0;
+        }
+
+        .gender-option input:checked + label {
+            border-color: #1976d2;
+            background: #e3f2fd;
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #1976d2;
+        }
+
+        .unit-hint {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .calculate-btn {
+            width: 100%;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f5f5f5;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-label {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .result-value {
+            text-align: center;
+            font-size: 42px;
+            font-weight: 700;
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .result-unit {
+            font-size: 18px;
+            font-weight: 400;
+        }
+
+        .stage-badge {
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: center;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+        }
+
+        .stage-normal {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .stage-mild {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .stage-moderate {
+            background: #ffe0b2;
+            color: #ef6c00;
+        }
+
+        .stage-severe {
+            background: #ffccbc;
+            color: #d84315;
+        }
+
+        .stage-failure {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        .disclaimer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .formula-note {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>eGFR 肾小球滤过率计算器</h1>
+        <p class="subtitle">CKD-EPI 2009 肌酐公式</p>
+
+        <div class="form-group">
+            <label>性别</label>
+            <div class="gender-group">
+                <div class="gender-option">
+                    <input type="radio" id="male" name="gender" value="male">
+                    <label for="male">男</label>
+                </div>
+                <div class="gender-option">
+                    <input type="radio" id="female" name="gender" value="female">
+                    <label for="female">女</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="age">年龄（周岁）</label>
+            <input type="number" id="age" placeholder="请输入年龄" min="1" max="120">
+        </div>
+
+        <div class="form-group">
+            <label for="creatinine">血肌酐（μmol/L）</label>
+            <input type="number" id="creatinine" placeholder="请输入血肌酐" min="1" step="0.1">
+            <p class="unit-hint">单位换算提示：1 mg/dL = 88.4 μmol/L</p>
+        </div>
+
+        <button class="calculate-btn" onclick="calculate()">计算 eGFR</button>
+
+        <div class="result-section" id="resultSection">
+            <p class="result-label">估算肾小球滤过率</p>
+            <div class="result-value">
+                <span id="egfrValue"></span>
+                <span class="result-unit">mL/min/1.73m²</span>
+            </div>
+            <div id="stageBadge" class="stage-badge"></div>
+        </div>
+
+        <p class="formula-note">采用临床通用 CKD-EPI 公式</p>
+
+        <div class="disclaimer">
+            <p>⚠️ 本计算器仅供参考，不替代专业医疗诊断。如有健康问题，请咨询医生。</p>
+        </div>
+    </div>
+
+    <script>
+        function calculate() {
+            const gender = document.querySelector('input[name="gender"]:checked');
+            const age = parseFloat(document.getElementById('age').value);
+            const creatinine = parseFloat(document.getElementById('creatinine').value);
+
+            if (!gender) {
+                alert('请选择性别');
+                return;
+            }
+            if (isNaN(age) || age < 1 || age > 120) {
+                alert('请输入有效年龄（1-120岁）');
+                return;
+            }
+            if (isNaN(creatinine) || creatinine < 1) {
+                alert('请输入有效血肌酐值');
+                return;
+            }
+
+            const genderValue = gender.value;
+            const creatinineMgDl = creatinine / 88.4;
+
+            let egfr;
+
+            if (genderValue === 'male') {
+                if (creatinineMgDl <= 0.9) {
+                    egfr = 141 * Math.pow(creatinineMgDl / 0.9, -0.411) * Math.pow(0.993, age);
+                } else {
+                    egfr = 141 * Math.pow(creatinineMgDl / 0.9, -1.209) * Math.pow(0.993, age);
+                }
+            } else {
+                if (creatinineMgDl <= 0.7) {
+                    egfr = 144 * Math.pow(creatinineMgDl / 0.7, -0.329) * Math.pow(0.993, age);
+                } else {
+                    egfr = 144 * Math.pow(creatinineMgDl / 0.7, -1.209) * Math.pow(0.993, age);
+                }
+            }
+
+            egfr = Math.round(egfr * 10) / 10;
+
+            let stageText, stageClass;
+            if (egfr >= 90) {
+                stageText = '肾功能正常';
+                stageClass = 'stage-normal';
+            } else if (egfr >= 60) {
+                stageText = '肾功能轻度下降';
+                stageClass = 'stage-mild';
+            } else if (egfr >= 30) {
+                stageText = '肾功能中度下降';
+                stageClass = 'stage-moderate';
+            } else if (egfr >= 15) {
+                stageText = '肾功能重度下降';
+                stageClass = 'stage-severe';
+            } else {
+                stageText = '肾衰竭';
+                stageClass = 'stage-failure';
+            }
+
+            document.getElementById('egfrValue').textContent = egfr;
+            const stageBadge = document.getElementById('stageBadge');
+            stageBadge.textContent = stageText;
+            stageBadge.className = 'stage-badge ' + stageClass;
+            document.getElementById('resultSection').classList.add('show');
+        }
+    </script>
+</body>
+</html>
